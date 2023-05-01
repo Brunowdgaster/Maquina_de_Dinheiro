@@ -20,12 +20,29 @@ from tensorflow.keras.layers import Dense, Dropout, LSTM
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+#mexer com tempo
+from datetime import datetime, timedelta
+
+
+
+
+
+
 #regitro de cada ia treinada com os dados gerais a longa escala
 IAs_treinadas = {}
+
+
+
+
+
+
 
 #mostrar tabelas
 
 def conf_tabela_padrao():pass #ver depois estetico
+
+
+
 
 def mostrar_vetor_tabelas(vetor_tabelas, vaetor_nomes): 
     #mostrar graficos
@@ -59,6 +76,7 @@ def mostrar_vetor_tabelas(vetor_tabelas, vaetor_nomes):
 
 
 
+
 #Selecionar acoes com maior chance de crecimento hoje
 def init_Selecao(lista_tabelas): 
     numero_maximo_de_tops = 10 #ainda tem que calcular com base nos limites
@@ -85,11 +103,14 @@ def inicializacao_Selecao(lista_tabelas): pass
 
 # Metodos IAs
 
+#variavel univeral para preparar Dados para IA ler facilmente
+normalizando = MinMaxScaler(feature_range=(0,1))
+
+
 def IA_youTube_Treino(grafico_Treino, codigo, previsao_quantidade, quatidade_valor_futuro):
 #criar padrão IA treinada que cada multhread tera  seu próprio
     
-    #Preparar Dados para IA ler facilmente
-    normalizando = MinMaxScaler(feature_range=(0,1))
+    
     dados_normalizados = normalizando.fit_transform(grafico_Treino.values.reshape(-1,1))
 
     #previsao_quantidade de valores indicado ser 60
@@ -120,7 +141,18 @@ def IA_youTube_Treino(grafico_Treino, codigo, previsao_quantidade, quatidade_val
 
     IAs_treinadas[codigo] = modelo 
 
+def adicionar_index_temp_min(vet, inicio, espasamento_min):
 
+    # Cria um intervalo de um minuto entre as linhas
+    intervalo = pd.date_range(inicio, periods=len(vet), freq=f'{espasamento_min}T')
+    # Cria um DataFrame com o vetor e o índice
+    df = pd.DataFrame({'Valores': vet, 'Data': intervalo})
+    # Define o índice do DataFrame como sendo a coluna 'Data'
+    df.set_index('Data', inplace=True)
+    print('df')
+    print(df)
+    print('df')
+    return df
 
 def IA_youTube_Teste(grafico_Treino, grafico_Teste, codigo, n_previsoes_a_frente):# grafico_Treino(usados no treino da ia) por que ele já estão definidos
 #criar padrão IA treinada que cada multhread tera  seu próprio
@@ -137,6 +169,8 @@ def IA_youTube_Teste(grafico_Treino, grafico_Teste, codigo, n_previsoes_a_frente
     modelo_entrada = normalizando.transform(modelo_entrada)
 
 
+    
+
     #Fazer previsoes nos valores de teste
 
     x_teste = []
@@ -146,16 +180,30 @@ def IA_youTube_Teste(grafico_Treino, grafico_Teste, codigo, n_previsoes_a_frente
         
     x_teste = np.array(x_teste)
     x_teste = np.reshape(x_teste, (x_teste.shape[0], x_teste.shape[1], 1))
-
+    
     previsao_precos = IAs_treinadas[codigo].predict(x_teste)
     previsao_precos = normalizando.inverse_transform(previsao_precos) #voltamdo aoformato original para poder comparar graficamente
 
+    #Precisa aida resolver o problema com matrizes
+    previsao_precos = previsao_precos[-1]
+
+    print(previsao_precos)
+    #Preciso adionar um index aos dados Previstos==> adionar em minutos
+        # Obter o último índice e adicionar 1 minuto
+    ultimo_index = dados_teste.index[-1]
+    Primeiro_index_previsto = pd.to_datetime(ultimo_index) + pd.DateOffset(minutes=1)
+    previsao_precos = adicionar_index_temp_min(previsao_precos, Primeiro_index_previsto, 1)
+    print('oooooooooooooooooooooooooooooooooooooooooo')
+    print(previsao_precos)
+    print(grafico_Teste)
+
     #Representando Graficamente as Previsoes
-    plt.plot(precos_reais, color ='red', label = f"Valor Real das acoes de {empresa}")
-    plt.plot(previsao_precos, color="green", label = f"Previsao das acoes de {empresa}" )
-    plt.title(f"{empresa} Preco Acao")
+    plt.plot(grafico_Teste, color ='blue', label = f"Valor Real das acoes de {codigo}")
+    plt.plot(previsao_precos, color="red", label = f"Previsao das acoes de {codigo}" )
+    plt.title(f"{codigo} Preco Acao")
     plt.xlabel('Tempo')
-    plt.ylabel(f"{empresa} Preco Acao")
+    plt.ylabel(f"{codigo} Preco Acao")
+    plt.grid(True)
     plt.legend()
     plt.show()
 
