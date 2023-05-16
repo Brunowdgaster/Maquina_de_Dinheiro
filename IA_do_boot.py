@@ -137,7 +137,7 @@ def IA_youTube_Treino(grafico_Treino, codigo, previsao_quantidade, quatidade_val
     modelo.add(Dense(units = quatidade_valor_futuro)) #Prevendo o proximos quatidade_valor_futuro do valor da acao
 
     modelo.compile(optimizer = 'adam', loss = 'mean_squared_error')
-    modelo.fit(x_treinar, y_treinar, epochs = 25, batch_size = 32)#treinar25 interações e receber 32 pacotes de informações
+    modelo.fit(x_treinar, y_treinar, epochs = 5, batch_size = 32)#treinar25 interações e receber 32 pacotes de informações
 
     IAs_treinadas[codigo] = modelo 
 
@@ -184,8 +184,8 @@ def IA_youTube_Teste(grafico_Treino, grafico_Teste, codigo, n_previsoes_a_frente
     previsao_precos = IAs_treinadas[codigo].predict(x_teste)
     previsao_precos = normalizando.inverse_transform(previsao_precos) #voltamdo aoformato original para poder comparar graficamente
 
-    #Precisa aida resolver o problema com matrizes
-    previsao_precos = previsao_precos[-1]
+    #Precisa aida resolver o problema com matrizes!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    previsao_precos = previsao_precos[0]
 
     print(previsao_precos)
     #Preciso adionar um index aos dados Previstos==> adionar em minutos
@@ -198,8 +198,21 @@ def IA_youTube_Teste(grafico_Treino, grafico_Teste, codigo, n_previsoes_a_frente
     print(grafico_Teste)
 
     #Representando Graficamente as Previsoes
-    plt.plot(grafico_Teste, color ='blue', label = f"Valor Real das acoes de {codigo}")
-    plt.plot(previsao_precos, color="red", label = f"Previsao das acoes de {codigo}" )
+    fig, axs = plt.subplots( figsize=(50, 25))#tamanho gráfico
+
+    #limitar o necessario
+    axs.set_xlim(grafico_Teste.index.min(), previsao_precos.index.max())
+
+    # Use o formato de hora para as marcas do eixo x
+    formato_horario = mdates.DateFormatter('%Y/%m/%d %H:%M')
+    axs.xaxis.set_major_formatter(formato_horario) 
+
+    # Defina o intervalo entre os valores do eixo x como sendo de uma hora
+    intervalo_horario = mdates.HourLocator(interval=1)
+    axs.xaxis.set_major_locator(intervalo_horario)
+
+    axs.plot(grafico_Teste, color ='blue', label = f"Valor Real das acoes de {codigo}")
+    axs.plot(previsao_precos, color="red", label = f"Previsao das acoes de {codigo}" )
     plt.title(f"{codigo} Preco Acao")
     plt.xlabel('Tempo')
     plt.ylabel(f"{codigo} Preco Acao")
